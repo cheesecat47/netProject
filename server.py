@@ -38,6 +38,10 @@ while flag:
         if recvData == 'exit':
             break
 
+        if recvData == 'shutdown server':
+            flag = False
+            break
+
         sendData = 'server: echo: ' + recvData
         connectionSock.send(sendData.encode('utf-8'))
 
