@@ -9,7 +9,7 @@ def out(msg):
     log.write(msg + '\n')
 
 
-port = 55891
+port = 45454
 flag = True
 cnt = 0
 
