@@ -4,19 +4,28 @@ from socket import *
 port = 45454
 
 # 게임 관련 변수
-chance = 10  # 기회 10번
+chance = 7  # 기회 7번
 word = 'apple'  # 단어는 나중에 랜덤 선택.
-word_now = ''  # 게임 중 문자열
-for _ in word:
-    word_now += '_ '  # 처음엔 빈 칸으로 초기화
-print(word_now)
+word_now = ''  # 게임 중에 보여줄 문자열
 
 
 # 함수 정의
+def initgame():
+    global chance
+    global word_now
+
+    chance = 7
+    for _ in word:
+        word_now += '_ '  # 처음엔 빈 칸으로 초기화
+    print(word_now)
+
+
 def checkword(ch):
     global chance
     word_temp = ''
     flag = False  # 새로운 알파벳 있는지 확인하기 위해
+
+    # 알파벳인지 단어인지 구별
 
     for i in range(len(word)):
         if ch == word[i]:  # 알파벳 같은게 있으면
@@ -32,20 +41,31 @@ def checkword(ch):
 
 
 # 메인
-serverSock = socket(AF_INET, SOCK_STREAM)
-serverSock.bind(('', port))
-serverSock.listen(1)
-
-connectionSock, addr = serverSock.accept()
-
 while True:
-    recvData = connectionSock.recv(1024).decode('utf-8')  # 문자열로 입력 받음
+    print('Server waiting for clients')
+    serverSock = socket(AF_INET, SOCK_STREAM)
+    serverSock.bind(('', port))
+    serverSock.listen(1)
+    connectionSock, addr = serverSock.accept()
 
-    if len(recvData) == 1:  # 알파벳 입력이면
-        word_now = checkword(recvData[0])  # 그 알파벳 있는지 체크
-        print('word_now: ', word_now, ' chance: ', str(chance));
+    # 새 연결 후 게임 초기화
+    initgame()
 
-    sendData = word_now
-    connectionSock.send(sendData.encode('utf-8'))
-    sendData = str(chance)
-    connectionSock.send(sendData.encode('utf-8'))
+    while True:
+        try:
+            recvData = connectionSock.recv(1024).decode('utf-8')  # 문자열로 입력 받음
+        except ConnectionResetError:  # 강제 종료 발생 시
+            print('client 강제 종료,  게임 초기화')
+            break
+
+        if len(recvData) > 0:  # null이 아니면
+            recvData = recvData.rstrip('\n')  # 개행문자 떼고
+            print(recvData, type(recvData), len(recvData))
+            word_now = checkword(recvData)  # 체크
+            print('word_now: ', word_now, ' chance: ', str(chance));
+
+        elif len(recvData) == 0:
+            break
+
+        sendData = str(chance) + '/' + word_now
+        connectionSock.send(sendData.encode('utf-8'))
