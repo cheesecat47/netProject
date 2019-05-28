@@ -5,6 +5,7 @@ port = 45454
 
 # 게임 관련 변수
 chance = 7  # 기회 7번
+result = 0
 word = 'apple'  # 단어는 나중에 랜덤 선택.
 word_now = ''  # 게임 중에 보여줄 문자열
 
@@ -22,17 +23,26 @@ def initgame():
 
 def checkword(ch):
     global chance
+    global result
     word_temp = ''
     flag = False  # 새로운 알파벳 있는지 확인하기 위해
 
     # 알파벳인지 단어인지 구별
+    # 단어일 때
+    if ch == word:
+        flag = True
+        result = 1
+        for i in range(len(word)):
+            word_temp += word[i] + ' '  # 알파벳 붙이고
 
-    for i in range(len(word)):
-        if ch == word[i]:  # 알파벳 같은게 있으면
-            word_temp += ch + ' '  # 알파벳 붙이고
-            flag = True
-        else:  # 알파벳 다르면
-            word_temp += word_now[i * 2] + ' '  # 이전에 그 자리에 있던 거 붙임.
+    # 알파벳일 때
+    elif ch != word:
+        for i in range(len(word)):
+            if ch == word[i]:  # 알파벳 같은게 있으면
+                word_temp += ch + ' '  # 알파벳 붙이고
+                flag = True
+            else:  # 알파벳 다르면
+                word_temp += word_now[i * 2] + ' '  # 이전에 그 자리에 있던 거 붙임.
 
     if flag == False:
         chance -= 1
@@ -53,7 +63,7 @@ while True:
 
     while True:
         try:
-            recvData = connectionSock.recv(1024).decode('utf-8')  # 문자열로 입력 받음
+            recvData = connectionSock.recv(20).decode('utf-8')  # 문자열로 입력 받음
         except ConnectionResetError:  # 강제 종료 발생 시
             print('client 강제 종료,  게임 초기화')
             break
@@ -67,5 +77,5 @@ while True:
         elif len(recvData) == 0:
             break
 
-        sendData = str(chance) + '/' + word_now
+        sendData = str(chance) + '/' + word_now + '/' + str(result)
         connectionSock.send(sendData.encode('utf-8'))
