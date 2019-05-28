@@ -1,5 +1,5 @@
 from socket import *
-import hangmanPrint
+import hmfunc
 
 port = 45454
 
@@ -15,4 +15,4 @@ while True:
     recvData = clientSock.recv(1024).decode('utf-8')
     print(recvData)
     recvData = clientSock.recv(1024).decode('utf-8')
-    hangmanPrint.hmprint(recvData)
+    hmfunc.hmprint(recvData)
