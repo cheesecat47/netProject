@@ -38,32 +38,62 @@ int main(int argc, char *argv[])
 	if (connect(hSocket, (struct sockaddr*)&servAddr, sizeof(servAddr)) == -1)
 		error_handling("connect() error!");
 	else
-		puts("Connected...........");
+		puts("Connected...........\n");
+	
 
+//	printf("player 이름을 입력해주세요 :");
+	//fgets(user_name, sizeof(user_name), stdin);
+	
+	printf("게임이 준비된 클라이언트는 'r'을 입력, 불참을 원하시면 'e'를 입력해주세요\n\n");
+	ch = getchar();
 
-	printf("player 이름을 입력해주세요 :");
-	fgets(user_name, sizeof(user_name), stdin);
+		while (1)
+		{
+			getchar();
+			if (ch == 'r')
+			{
 
-	printf("준비된 클라이언트는 'r'을 입력,게임에 불참을 원하시면 'e'를 입력해주세요\n");
-	if (ch = getchar() == 'r')
-	{
-		str_len = send(hSocket, "ready", strlen("ready"), 0);
-	}
-	else if  (ch = getchar() == 'e')
-	{
-		str_len = send(hSocket, "exit", strlen("exit"), 0);
-	}
+				str_len = send(hSocket, "ready", strlen("ready"), 0);
+			//getchar();
+				break;
+			}
+			else if (ch == 'e')
+			{
+				str_len = send(hSocket, "exit", strlen("exit"), 0);
+				printf("종료하겠습니다.\n");
+				closesocket(hSocket);
+				WSACleanup();
+				return 0;
+			}
+			else
+			{
+				printf("'r'또는 'e'만 입력해주세요\n");
+				ch = getchar();
+				
 
+			}
+			
+		}
+	
+
+//	ch = getchar();
 	memset(message2, '\0', sizeof(message));
 	recv_len = 0;
+	printf("게임을 시작하겠습니다.\n");
 	while (1)
 	{
-		puts("input message(0 to q): ");
+	
+		puts("단어 혹은 알파벳을 입력하세요 : ");
 		fgets(message, BUF_SIZE, stdin);
 		//message[1] = "";
 		
 		if (!strcmp(message, "exit\n") || (!strcmp(message, "EXIT\n")))
+		{ 
+
+			str_len = send(hSocket, message, strlen(message), 0);
 			break;
+		}
+			
 
 		str_len = send(hSocket, message, strlen(message), 0);
 
@@ -81,7 +111,7 @@ int main(int argc, char *argv[])
 		word_now = strtok_s(word_now, "/", &tf);
 
 		printf("%s", tf);
-		printf("from server : %d",atoi(chanceStr));
+		printf(" %d ",atoi(chanceStr));
 	//arsing = strtok(NULL, )
 
 			printf("%s\n", word_now);
