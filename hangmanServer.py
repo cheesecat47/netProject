@@ -1,6 +1,7 @@
 # https://soooprmx.com/archives/8737
 
 from socket import *
+import random
 
 # 소켓 변수
 port = 45454
@@ -11,6 +12,7 @@ result = 0
 word = 'apple'  # 단어는 나중에 랜덤 선택.
 word_now = ''  # 게임 중에 보여줄 문자열
 gamestart = False  # 게임 시작 체크
+clients = list();  # 클라 배열
 
 
 # 함수 정의
@@ -24,7 +26,7 @@ def initgame():  # 게임 초기화
     word_now = ''
     for _ in word:
         word_now += '_ '  # 처음엔 빈 칸으로 초기화, word 길이만큼 _ _ _ _ _
-    print(word_now)
+    # print(word_now)
 
 
 def checkword(ch):
@@ -65,17 +67,12 @@ while True:
     connectionSock, addr = serverSock.accept()
     print('client connected: ', str(addr))
 
-    # 새 연결 후 게임 초기화
-    initgame()
-
     # 클라가 ready 입력하면 게임 시작. exit이면 종료. 4번동안 다른 메세지 들어오면 그냥 종료
     try:
         recvData = connectionSock.recv(40).decode('utf-8')  # 문자열로 입력 받음
     except ConnectionResetError:  # 강제 종료 발생 시
         print('client 강제 종료,  게임 초기화')  # 나중에 멀티 클라 상황일 때 추가 핸들링 구현
-        break
-
-    print('client ready or exit? ', recvData)
+        continue
 
     if len(recvData) > 0:  # null이 아니면
         recvData = recvData.rstrip('\n')  # 개행문자 떼고
@@ -89,6 +86,36 @@ while True:
         print("gamestart = False")
         connectionSock.close()
         continue
+
+    # 클라 이름 입력 받음
+    try:
+        recvData = connectionSock.recv(40).decode('utf-8')  # 문자열로 입력 받음
+    except ConnectionResetError:  # 강제 종료 발생 시
+        print('client 강제 종료,  게임 초기화')  # 나중에 멀티 클라 상황일 때 추가 핸들링 구현
+        break
+
+    print('client name?  ', recvData)
+
+    if len(recvData) > 0:  # null이 아니면
+        recvData = recvData.rstrip('\n')  # 개행문자 떼고
+        clients.append((recvData, addr))
+
+    # 새 연결 후 게임 초기화
+    initgame()
+
+    if len(clients) == 3:
+        # 모든 클라이언트 이름 보내기
+        print(clients)
+        sendData = '/'.join(name for name, addr in clients)
+        print(sendData)
+        connectionSock.send(sendData.encode('utf-8'))
+
+        # 첫 턴 / 남은 횟수 /  현재 문자열 / 현재 상황? 슬래시로 보내면 클라가 슬래시로 tokenise.
+        turn = random.randrange(len(clients))  # 첫 턴은 랜덤으로
+        n, a = clients[turn]
+        sendData = n + '/' + str(chance) + '/' + word_now + '/' + str(result)
+        print(sendData)
+        connectionSock.send(sendData.encode('utf-8'))
 
     while True:
         try:
@@ -111,6 +138,9 @@ while True:
         elif len(recvData) == 0:
             break
 
-        # 남은 횟수 /  현재 문자열 / 현재 상황? 슬래시로 보내면 클라가 슬래시로 tokenise.
-        sendData = str(chance) + '/' + word_now + '/' + str(result)
+        # 다음 턴 / 남은 횟수 /  현재 문자열 / 현재 상황? 슬래시로 보내면 클라가 슬래시로 tokenise.
+        turn = (turn + 1) % len(clients)
+        n, a = clients[turn]
+        sendData = n + '/' + str(chance) + '/' + word_now + '/' + str(result)
+        print(sendData)
         connectionSock.send(sendData.encode('utf-8'))
