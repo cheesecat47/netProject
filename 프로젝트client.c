@@ -14,10 +14,12 @@ int main(int argc, char *argv[])
 
 	char message[BUF_SIZE];
 	char message2[BUF_SIZE];
+	char user_name[20];
+	char ch;
 	int recv_len;
 	int str_len;
 	int recv_cnt = 0;
-	char *chanceStr, *word_now;
+	char *tf,*chanceStr, *word_now;
 	WSADATA wsaData;
 	SOCKET hSocket;
 	SOCKADDR_IN servAddr;
@@ -37,6 +39,20 @@ int main(int argc, char *argv[])
 		error_handling("connect() error!");
 	else
 		puts("Connected...........");
+
+
+	printf("player ì´ë¦„ì„ ì…ë ¥í•´ì£¼ì„¸ìš” :");
+	fgets(user_name, sizeof(user_name), stdin);
+
+	printf("ì¤€ë¹„ëœ í´ë¼ì´ì–¸íŠ¸ëŠ” 'r'ì„ ì…ë ¥,ê²Œì„ì— ë¶ˆì°¸ì„ ì›í•˜ì‹œë©´ 'e'ë¥¼ ì…ë ¥í•´ì£¼ì„¸ìš”\n");
+	if (ch = getchar() == 'r')
+	{
+		str_len = send(hSocket, "ready", strlen("ready"), 0);
+	}
+	else if  (ch = getchar() == 'e')
+	{
+		str_len = send(hSocket, "exit", strlen("exit"), 0);
+	}
 
 	memset(message2, '\0', sizeof(message));
 	recv_len = 0;
@@ -60,9 +76,11 @@ int main(int argc, char *argv[])
 				error_handling("read() error!");
 			recv_len += recv_cnt;
 		}
-		
+	
 		chanceStr = strtok_s(message2, "/",&word_now);
+		word_now = strtok_s(word_now, "/", &tf);
 
+		printf("%s", tf);
 		printf("from server : %d",atoi(chanceStr));
 	//arsing = strtok(NULL, )
 
@@ -89,28 +107,28 @@ char* drawHangman(int num) {
 	switch (num)
 	{
 	case 7:
-		hangman = "¦£¦¡¦¡¦¡¦¤\n¦¢\n¦¢\n¦¢\n¦¢\n¦¦¦¡¦¡¦¡¦¡¦¡¦¡\n";
+		hangman = "â”Œâ”€â”€â”€â”\nâ”‚\nâ”‚\nâ”‚\nâ”‚\nâ””â”€â”€â”€â”€â”€â”€\n";
 		break;
 	case 6:
-		hangman = "¦£¦¡¦¡¦¡¦¤\n¦¢¡¡¡Û\n¦¢\n¦¢\n¦¢\n¦¦¦¡¦¡¦¡¦¡¦¡¦¡\n";
+		hangman = "â”Œâ”€â”€â”€â”\nâ”‚ã€€â—‹\nâ”‚\nâ”‚\nâ”‚\nâ””â”€â”€â”€â”€â”€â”€\n";
 		break;
 	case 5:
-		hangman = "¦£¦¡¦¡¦¡¦¤\n¦¢¡¡¡Û\n¦¢¡¡ |\n¦¢\n¦¢\n¦¦¦¡¦¡¦¡¦¡¦¡¦¡\n";
+		hangman = "â”Œâ”€â”€â”€â”\nâ”‚ã€€â—‹\nâ”‚ã€€ |\nâ”‚\nâ”‚\nâ””â”€â”€â”€â”€â”€â”€\n";
 		break;
 	case 4:
-		hangman = "¦£¦¡¦¡¦¡¦¤\n¦¢¡¡¡Û\n¦¢¡¡/|\n¦¢\n¦¢\n¦¦¦¡¦¡¦¡¦¡¦¡¦¡\n";
+		hangman = "â”Œâ”€â”€â”€â”\nâ”‚ã€€â—‹\nâ”‚ã€€/|\nâ”‚\nâ”‚\nâ””â”€â”€â”€â”€â”€â”€\n";
 		break;
 	case 3:
-		hangman = "¦£¦¡¦¡¦¡¦¤\n¦¢¡¡¡Û\n¦¢¡¡/|¡¬\n¦¢¡¡\n¦¢\n¦¦¦¡¦¡¦¡¦¡¦¡¦¡\n";
+		hangman = "â”Œâ”€â”€â”€â”\nâ”‚ã€€â—‹\nâ”‚ã€€/|ï¼¼\nâ”‚ã€€\nâ”‚\nâ””â”€â”€â”€â”€â”€â”€\n";
 		break;
 	case 2:
-		hangman = "¦£¦¡¦¡¦¡¦¤\n¦¢¡¡¡Û\n¦¢¡¡/|¡¬\n¦¢¡¡/\n¦¢\n¦¦¦¡¦¡¦¡¦¡¦¡¦¡\n";
+		hangman = "â”Œâ”€â”€â”€â”\nâ”‚ã€€â—‹\nâ”‚ã€€/|ï¼¼\nâ”‚ã€€/\nâ”‚\nâ””â”€â”€â”€â”€â”€â”€\n";
 		break;
 	case 1:
-		hangman = "¦£¦¡¦¡¦¡¦¤\n¦¢¡¡¡Û\n¦¢¡¡/|¡¬\n¦¢¡¡/¡¬\n¦¢\n¦¦¦¡¦¡¦¡¦¡¦¡¦¡\n";
+		hangman = "â”Œâ”€â”€â”€â”\nâ”‚ã€€â—‹\nâ”‚ã€€/|ï¼¼\nâ”‚ã€€/ï¼¼\nâ”‚\nâ””â”€â”€â”€â”€â”€â”€\n";
 		break;
 	case 0:
-		hangman = "¦£¦¡¦¡¦¡¦¤\n¦¢¡¡¡Û\n¦¢¡¡ X\n¦¢¡¡/|¡¬\n¦¢¡¡/¡¬\n¦¦¦¡¦¡¦¡¦¡¦¡¦¡\n";
+		hangman = "â”Œâ”€â”€â”€â”\nâ”‚ã€€â—‹\nâ”‚ã€€ X\nâ”‚ã€€/|ï¼¼\nâ”‚ã€€/ï¼¼\nâ””â”€â”€â”€â”€â”€â”€\n";
 		break;
 	default:
 		hangman = "drawing error\n";
