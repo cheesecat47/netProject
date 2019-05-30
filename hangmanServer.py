@@ -1,3 +1,5 @@
+# https://soooprmx.com/archives/8737
+
 from socket import *
 
 # 소켓 변수
@@ -8,14 +10,18 @@ chance = 7  # 기회 7번
 result = 0
 word = 'apple'  # 단어는 나중에 랜덤 선택.
 word_now = ''  # 게임 중에 보여줄 문자열
+gamestart = False  # 게임 시작 체크
 
 
 # 함수 정의
 def initgame():  # 게임 초기화
     global chance  # 전역 변수 사용
     global word_now
+    global gamestart
 
     chance = 7
+    gamestart = False
+    word_now = ''
     for _ in word:
         word_now += '_ '  # 처음엔 빈 칸으로 초기화, word 길이만큼 _ _ _ _ _
     print(word_now)
@@ -57,21 +63,50 @@ while True:
     serverSock.bind(('', port))
     serverSock.listen(1)
     connectionSock, addr = serverSock.accept()
+    print('client connected: ', str(addr))
 
     # 새 연결 후 게임 초기화
     initgame()
 
+    # 클라가 ready 입력하면 게임 시작. exit이면 종료. 4번동안 다른 메세지 들어오면 그냥 종료
+    try:
+        recvData = connectionSock.recv(40).decode('utf-8')  # 문자열로 입력 받음
+    except ConnectionResetError:  # 강제 종료 발생 시
+        print('client 강제 종료,  게임 초기화')  # 나중에 멀티 클라 상황일 때 추가 핸들링 구현
+        break
+
+    print('client ready or exit? ', recvData)
+
+    if len(recvData) > 0:  # null이 아니면
+        recvData = recvData.rstrip('\n')  # 개행문자 떼고
+
+        if recvData == 'ready':  # ready면
+            gamestart = True  # 바꾸고
+        elif recvData == 'exit':
+            connectionSock.close()  # 나간다하면 보내줌
+
+    if gamestart is False:
+        print("gamestart = False")
+        connectionSock.close()
+        continue
+
     while True:
         try:
-            recvData = connectionSock.recv(20).decode('utf-8')  # 문자열로 입력 받음
+            recvData = connectionSock.recv(40).decode('utf-8')  # 문자열로 입력 받음
         except ConnectionResetError:  # 강제 종료 발생 시
             print('client 강제 종료,  게임 초기화')  # 나중에 멀티 클라 상황일 때 추가 핸들링 구현
             break
 
         if len(recvData) > 0:  # null이 아니면
             recvData = recvData.rstrip('\n')  # 개행문자 떼고
+
+            if recvData == 'exit':
+                print('client sent exit message')
+                connectionSock.close()
+                break
+
             word_now = checkword(recvData)  # 체크
-            print('word_now: ', word_now, ' chance left: ', str(chance))
+            print('recvData: ', recvData, 'word_now: ', word_now, ' chance left: ', str(chance))
 
         elif len(recvData) == 0:
             break
