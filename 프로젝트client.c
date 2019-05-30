@@ -1,3 +1,5 @@
+#define _CRT_SECURE_NO_WARNINGS
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,18 +10,23 @@
 #define BUF_SIZE 1024
 void error_handling(char *message);
 char* drawHangman(int num);
-
+void print_turn(char *player[],char *turn);
+void print_player(char *player[]);
 int main(int argc, char *argv[])
 {
 
 	char message[BUF_SIZE];
 	char message2[BUF_SIZE];
-	char user_name[20];
+	char user_name[20];	//player name
 	char ch;
+	char *temp;
+	char *k;
 	int recv_len;
 	int str_len;
 	int recv_cnt = 0;
 	char *tf,*chanceStr, *word_now;
+	char *turn;
+	char token_player[BUF_SIZE],*players[3];
 	WSADATA wsaData;
 	SOCKET hSocket;
 	SOCKADDR_IN servAddr;
@@ -41,8 +48,9 @@ int main(int argc, char *argv[])
 		puts("Connected...........\n");
 	
 
-//	printf("player 이름을 입력해주세요 :");
-	//fgets(user_name, sizeof(user_name), stdin);
+	printf("player 이름을 입력해주세요 :");
+	fgets(user_name, sizeof(user_name), stdin);
+	temp = strtok_s(user_name, "\n", &k);
 	
 	printf("게임이 준비된 클라이언트는 'r'을 입력, 불참을 원하시면 'e'를 입력해주세요\n\n");
 	ch = getchar();
@@ -52,8 +60,9 @@ int main(int argc, char *argv[])
 			getchar();
 			if (ch == 'r')
 			{
-
 				str_len = send(hSocket, "ready", strlen("ready"), 0);
+				str_len = send(hSocket, user_name, strlen(user_name), 0);
+
 			//getchar();
 				break;
 			}
@@ -68,36 +77,39 @@ int main(int argc, char *argv[])
 			else
 			{
 				printf("'r'또는 'e'만 입력해주세요\n");
-				ch = getchar();
-				
-
+    			ch = getchar();
+	
 			}
 			
 		}
-	
 
+
+		memset(token_player, '\0', sizeof(token_player));
+
+		recv_len=recv(hSocket, token_player,BUF_SIZE, 0);
+		if (recv_len == -1 ||recv_len== 0)
+		{
+			printf("서버로부터 player 리스트 받기 실패\n");
+			//exit(1);
+		}
+
+		players[0] = strtok_s(token_player, "/", &players[1]);
+		players[1] = strtok_s(players[1], "/", &players[2]);
+		print_player(players);
+		/*
+		참가 user 출력
+		recv
+		//'/'로 parsing
+		//player[]에 저장
+	//	print
+		*/
 //	ch = getchar();
 	memset(message2, '\0', sizeof(message));
 	recv_len = 0;
-	printf("게임을 시작하겠습니다.\n");
 	while (1)
 	{
-	
-		puts("단어 혹은 알파벳을 입력하세요 : ");
-		fgets(message, BUF_SIZE, stdin);
-		//message[1] = "";
-		
-		if (!strcmp(message, "exit\n") || (!strcmp(message, "EXIT\n")))
-		{ 
-
-			str_len = send(hSocket, message, strlen(message), 0);
-			break;
-		}
-			
-
-		str_len = send(hSocket, message, strlen(message), 0);
-
 		recv_len = 0;
+		
 		while (recv_len < str_len)
 		{
 			recv_cnt = recv(hSocket, &message2[recv_len], BUF_SIZE, 0);
@@ -106,23 +118,83 @@ int main(int argc, char *argv[])
 				error_handling("read() error!");
 			recv_len += recv_cnt;
 		}
-	
-		chanceStr = strtok_s(message2, "/",&word_now);
+		turn = strtok_s(message2, "/", &chanceStr);
+		//strcat(turn, "\n");
+		//print_turn(players, turn);
+		chanceStr = strtok_s(chanceStr, "/", &word_now);
+		printf("남은 기회 : %d \n", atoi(chanceStr));
+
 		word_now = strtok_s(word_now, "/", &tf);
-
+		printf("%s\n", word_now);
+	
 		printf("%s", tf);
-		printf(" %d ",atoi(chanceStr));
-	//arsing = strtok(NULL, )
 
-			printf("%s\n", word_now);
-			
-			printf("%s\n", drawHangman(atoi(chanceStr)));
+
+		printf("%s\n", drawHangman(atoi(chanceStr)));
+		
+	//	int i;
+		//for ( i = 0; user_name[i] != '\n'; i++);
+		//user_name[i] = ' ';
+		//recv_len = recv(hSocket, turn, strlen(turn), 0);
+		print_turn(players, turn);
+		if (strcmp(turn, temp) == 0)	//본인이름과 server가 보낸 turn 비교해서 같으면 진행
+		{
+			printf("게임을 시작하겠습니다. 종료하시고 싶으시면 'exit'를 입력해주세요\n");
+
+			puts("단어 혹은 알파벳을 입력하세요 : ");
+			fgets(message, BUF_SIZE, stdin);
+			//message[1] = "";
+			if (!strcmp(message, "exit\n") || (!strcmp(message, "EXIT\n")))
+			{
+				str_len = send(hSocket, message, strlen(message), 0);
+				break;
+			}
+
+			str_len = send(hSocket, message, strlen(message), 0);
 	}
+		else
+		{
+			printf("당신의 turn이 아닙니다.\n");
+		}
+
+		
+		}
+	
 
 	closesocket(hSocket);
 	WSACleanup();
 	return 0;
 }
+
+void print_player(char *player[])
+{
+
+	int i;
+	for (i = 0; i < 3; i++)
+	{
+		
+			printf("%s\n", player[i]);
+	}
+
+}
+
+void print_turn(char *player[],char *turn)
+{
+	int i;
+	printf("현재의 턴을 보여줍니다.\n");
+	
+	for (i = 0; i < 3; i++)
+	{
+		//strcat(player[i], "\n");
+		if (strcmp(turn, player[i]) == 0)
+			printf("%s<-\n", player[i]);
+		else
+			printf("%s\n", player[i]);
+	}
+
+
+}
+
 
 void error_handling(char *message)
 {
