@@ -21,6 +21,7 @@ def initgame():  # 게임 초기화
 
     chance = 7
     gamestart = False
+    word_now = ''
     for _ in word:
         word_now += '_ '  # 처음엔 빈 칸으로 초기화, word 길이만큼 _ _ _ _ _
     print(word_now)
