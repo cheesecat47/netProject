@@ -1,3 +1,5 @@
+#define _CRT_SECURE_NO_WARNINGS
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,19 +10,24 @@
 #define BUF_SIZE 1024
 void error_handling(char *message);
 char* drawHangman(int num);
+void print_turn(char *player[], char *turn, int i);
+void print_player(char *player[], int i);
 
 int main(int argc, char *argv[])
 {
-
-	char message[BUF_SIZE];
-	char message2[BUF_SIZE];
-	int recv_len;
-	int str_len;
-	int recv_cnt = 0;
-	char *chanceStr, *word_now;
 	WSADATA wsaData;
 	SOCKET hSocket;
 	SOCKADDR_IN servAddr;
+	char message[BUF_SIZE], user_info[BUF_SIZE];
+	char user_name[20],ch;	//player name
+	char *temp,*k; //usernameì—ì„œ \në•Œê¸° ìœ„í•´ì„œ
+	char *tf, *chanceStr, *word_now;
+	char *turn;
+	char token_player[BUF_SIZE], *players[3];
+	int recv_len;
+	int str_len;
+	int recv_cnt = 0;
+
 	if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
 		error_handling("WSAStartup() error!");
 
@@ -30,51 +37,175 @@ int main(int argc, char *argv[])
 
 	memset(&servAddr, 0, sizeof(servAddr));
 	servAddr.sin_family = AF_INET;
-	servAddr.sin_addr.s_addr = inet_addr("155.230.28.129");
+	//servAddr.sin_addr.s_addr = inet_addr("155.230.28.129");
+	servAddr.sin_addr.s_addr = inet_addr("118.45.154.188");
+
 	servAddr.sin_port = htons(atoi("45454"));
 
 	if (connect(hSocket, (struct sockaddr*)&servAddr, sizeof(servAddr)) == -1)
 		error_handling("connect() error!");
 	else
-		puts("Connected...........");
+		puts("Connected...........\n");
 
-	memset(message2, '\0', sizeof(message));
-	recv_len = 0;
+
+	printf("player ì´ë¦„ì„ ì…ë ¥í•´ì£¼ì„¸ìš” :");
+	fgets(user_name, sizeof(user_name), stdin);
+	temp = strtok_s(user_name, "\n", &k);
+
+	printf("ê²Œì„ì´ ì¤€ë¹„ëœ í´ë¼ì´ì–¸íŠ¸ëŠ” 'r'ì„ ì…ë ¥, ë¶ˆì°¸ì„ ì›í•˜ì‹œë©´ 'e'ë¥¼ ì…ë ¥í•´ì£¼ì„¸ìš”\n\n");
+	ch = getchar();
+
 	while (1)
 	{
-		puts("input message(0 to q): ");
-		fgets(message, BUF_SIZE, stdin);
-		//message[1] = "";
-		
-		if (!strcmp(message, "exit\n") || (!strcmp(message, "EXIT\n")))
+		getchar();
+		if (ch == 'r')
+		{
+			//str_len = send(hSocket, "ready", strlen("ready"), 0);
+			str_len = send(hSocket, user_name, strlen(user_name), 0);
+			//getchar();
 			break;
+		}
+		else if (ch == 'e')
+		{
+			str_len = send(hSocket, "exit", strlen("exit"), 0);
+			printf("ì¢…ë£Œí•˜ê² ìŠµë‹ˆë‹¤.\n");
+			closesocket(hSocket);
+			WSACleanup();
+			return 0;
+		}
+		else
+		{
+			printf("'r'ë˜ëŠ” 'e'ë§Œ ì…ë ¥í•´ì£¼ì„¸ìš”\n");
+			ch = getchar();
 
-		str_len = send(hSocket, message, strlen(message), 0);
+		}
+	}
 
+	memset(token_player, '\0', sizeof(token_player));
+	printf("ë‹¤ë¥¸ playerë“¤ì˜ ì…ì¥ì„ ê¸°ë‹¤ë¦½ë‹ˆë‹¤........\n");
+	              
+	recv_len = recv(hSocket, token_player, BUF_SIZE, 0);
+	//printf("%s", token_player);
+	if (recv_len == -1 || recv_len == 0)
+	{
+		printf("ì„œë²„ë¡œë¶€í„° player ë¦¬ìŠ¤íŠ¸ ë°›ê¸° ì‹¤íŒ¨\n");
+		//exit(1);
+	}
+
+
+	/*
+	í´ë¼ì´ì–¸íŠ¸ í”Œë ˆì´ì–´ ìˆ˜ ë°˜ë³µìœ¼ë¡œ ëŒë¦¬ì
+
+	*/
+
+	players[0] = strtok_s(token_player, "/", &players[1]);
+	players[1] = strtok_s(players[1], "/", &players[2]);
+	players[2] = strtok_s(players[2], "/", &players[3]);
+	print_player(players, 3);
+	/*
+	ì°¸ê°€ user ì¶œë ¥
+	recv
+	//'/'ë¡œ parsing
+	//player[]ì— ì €ì¥
+//	print
+	*/
+	//	ch = getchar();
+	memset(user_info, '\0', sizeof(message));
+	recv_len = 0;
+
+	while (1)
+	{
 		recv_len = 0;
+		//str_len = 0;
 		while (recv_len < str_len)
 		{
-			recv_cnt = recv(hSocket, &message2[recv_len], BUF_SIZE, 0);
-
+			recv_cnt = recv(hSocket, &user_info[recv_len], BUF_SIZE, 0);
 			if (recv_cnt == -1)
 				error_handling("read() error!");
 			recv_len += recv_cnt;
 		}
 		
-		chanceStr = strtok_s(message2, "/",&word_now);
+		turn = strtok_s(user_info, "/", &chanceStr);
+		chanceStr = strtok_s(chanceStr, "/", &word_now);
+		word_now = strtok_s(word_now, "/", &tf);
+		
+		if (strcmp(tf, players[3]) == 0)
+			printf("ë‹¹ì‹ ì˜ ìŠ¹ë¦¬ì…ë‹ˆë‹¤.\n");
+		else if (strcmp(tf, "-1") != 0)
+			printf("%sì˜ ìŠ¹ë¦¬ì…ë‹ˆë‹¤.", tf);
+	
 
-		printf("from server : %d",atoi(chanceStr));
-	//arsing = strtok(NULL, )
+		printf("ë‚¨ì€ ê¸°íšŒ : %d \n", atoi(chanceStr));
+		printf("%s\n", word_now);
 
-			printf("%s\n", word_now);
-			
-			printf("%s\n", drawHangman(atoi(chanceStr)));
+		//printf("%s", tf);
+
+
+
+		printf("%s\n", drawHangman(atoi(chanceStr)));
+		print_turn(players, turn, 3);
+
+		if (strcmp(turn,players[3]) == 0)	//ë³¸ì¸ì´ë¦„ê³¼ serverê°€ ë³´ë‚¸ turn ë¹„êµí•´ì„œ ê°™ìœ¼ë©´ ì§„í–‰
+		{
+			printf("ê²Œì„ì„ ì‹œì‘í•˜ê² ìŠµë‹ˆë‹¤. ì¢…ë£Œí•˜ì‹œê³  ì‹¶ìœ¼ì‹œë©´ 'exit'ë¥¼ ì…ë ¥í•´ì£¼ì„¸ìš”\n");
+			puts("ë‹¨ì–´ í˜¹ì€ ì•ŒíŒŒë²³ì„ ì…ë ¥í•˜ì„¸ìš” : ");
+			fgets(message, BUF_SIZE, stdin);
+	
+			if (strcmp(message, "\n") == 0)
+				continue;
+
+			if (!strcmp(message, "exit\n") || (!strcmp(message, "EXIT\n")))
+			{
+				//str_len = send(hSocket, message, strlen(message), 0);
+				break;
+			}
+
+			str_len = send(hSocket, message, strlen(message), 0);
+		}
+		else
+		    printf("ë‹¹ì‹ ì˜ turnì´ ì•„ë‹™ë‹ˆë‹¤. turnì´ ëŒì•„ì˜¬ë•Œê¹Œì§€ ëŒ€ê¸°í•´ì£¼ì„¸ìš”\n");
+
+		
 	}
 
 	closesocket(hSocket);
 	WSACleanup();
 	return 0;
 }
+
+void print_player(char *player[], int i)
+{
+
+	//int i;
+	printf("\n---------list of players---------\n");
+	for (i = 0; i < 3; i++)
+	{
+
+		printf("%s\n", player[i]);
+	}
+	printf("-----------------------------------\n");
+}
+
+void print_turn(char *player[], char *turn, int i)
+{
+	//int i;
+	int turn_ind = atoi(turn);
+
+	printf("\n------------í˜„ì¬ turn------------\n");
+
+	for (i = 0; i < 3; i++)
+	{
+		//strcat(player[i], "\n");
+		//if (strcmp(turn, player[i]) == 0)
+		if(turn_ind==i)
+		printf("%s<-\n", player[i]);
+		else
+			printf("%s\n", player[i]);
+	}
+	printf("-----------------------------------\n");
+
+}
+
 
 void error_handling(char *message)
 {
@@ -89,28 +220,28 @@ char* drawHangman(int num) {
 	switch (num)
 	{
 	case 7:
-		hangman = "¦£¦¡¦¡¦¡¦¤\n¦¢\n¦¢\n¦¢\n¦¢\n¦¦¦¡¦¡¦¡¦¡¦¡¦¡\n";
+		hangman = "â”Œâ”€â”€â”€â”\nâ”‚\nâ”‚\nâ”‚\nâ”‚\nâ””â”€â”€â”€â”€â”€â”€\n";
 		break;
 	case 6:
-		hangman = "¦£¦¡¦¡¦¡¦¤\n¦¢¡¡¡Û\n¦¢\n¦¢\n¦¢\n¦¦¦¡¦¡¦¡¦¡¦¡¦¡\n";
+		hangman = "â”Œâ”€â”€â”€â”\nâ”‚ã€€â—‹\nâ”‚\nâ”‚\nâ”‚\nâ””â”€â”€â”€â”€â”€â”€\n";
 		break;
 	case 5:
-		hangman = "¦£¦¡¦¡¦¡¦¤\n¦¢¡¡¡Û\n¦¢¡¡ |\n¦¢\n¦¢\n¦¦¦¡¦¡¦¡¦¡¦¡¦¡\n";
+		hangman = "â”Œâ”€â”€â”€â”\nâ”‚ã€€â—‹\nâ”‚ã€€ |\nâ”‚\nâ”‚\nâ””â”€â”€â”€â”€â”€â”€\n";
 		break;
 	case 4:
-		hangman = "¦£¦¡¦¡¦¡¦¤\n¦¢¡¡¡Û\n¦¢¡¡/|\n¦¢\n¦¢\n¦¦¦¡¦¡¦¡¦¡¦¡¦¡\n";
+		hangman = "â”Œâ”€â”€â”€â”\nâ”‚ã€€â—‹\nâ”‚ã€€/|\nâ”‚\nâ”‚\nâ””â”€â”€â”€â”€â”€â”€\n";
 		break;
 	case 3:
-		hangman = "¦£¦¡¦¡¦¡¦¤\n¦¢¡¡¡Û\n¦¢¡¡/|¡¬\n¦¢¡¡\n¦¢\n¦¦¦¡¦¡¦¡¦¡¦¡¦¡\n";
+		hangman = "â”Œâ”€â”€â”€â”\nâ”‚ã€€â—‹\nâ”‚ã€€/|ï¼¼\nâ”‚ã€€\nâ”‚\nâ””â”€â”€â”€â”€â”€â”€\n";
 		break;
 	case 2:
-		hangman = "¦£¦¡¦¡¦¡¦¤\n¦¢¡¡¡Û\n¦¢¡¡/|¡¬\n¦¢¡¡/\n¦¢\n¦¦¦¡¦¡¦¡¦¡¦¡¦¡\n";
+		hangman = "â”Œâ”€â”€â”€â”\nâ”‚ã€€â—‹\nâ”‚ã€€/|ï¼¼\nâ”‚ã€€/\nâ”‚\nâ””â”€â”€â”€â”€â”€â”€\n";
 		break;
 	case 1:
-		hangman = "¦£¦¡¦¡¦¡¦¤\n¦¢¡¡¡Û\n¦¢¡¡/|¡¬\n¦¢¡¡/¡¬\n¦¢\n¦¦¦¡¦¡¦¡¦¡¦¡¦¡\n";
+		hangman = "â”Œâ”€â”€â”€â”\nâ”‚ã€€â—‹\nâ”‚ã€€/|ï¼¼\nâ”‚ã€€/ï¼¼\nâ”‚\nâ””â”€â”€â”€â”€â”€â”€\n";
 		break;
 	case 0:
-		hangman = "¦£¦¡¦¡¦¡¦¤\n¦¢¡¡¡Û\n¦¢¡¡ X\n¦¢¡¡/|¡¬\n¦¢¡¡/¡¬\n¦¦¦¡¦¡¦¡¦¡¦¡¦¡\n";
+		hangman = "â”Œâ”€â”€â”€â”\nâ”‚ã€€â—‹\nâ”‚ã€€ X\nâ”‚ã€€/|ï¼¼\nâ”‚ã€€/ï¼¼\nâ””â”€â”€â”€â”€â”€â”€\n";
 		break;
 	default:
 		hangman = "drawing error\n";
