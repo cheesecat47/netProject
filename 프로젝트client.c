@@ -11,6 +11,7 @@
 void error_handling(char *message);
 char* drawHangman(int num);
 void print_turn(char *player[], char *turn);
+int game_count = 1;
 //void print_player(char *player[], int i);
 
 int main(int argc, char *argv[])
@@ -51,9 +52,7 @@ int main(int argc, char *argv[])
 	*/
 	
 	memset(token_player, '\0', sizeof(token_player));
-
 	recv_len = recv(hSocket, token_player, BUF_SIZE, 0);
-	//
 	if (recv_len == -1 || recv_len == 0)
 	{
 		printf("서버로부터 player 리스트 받기 실패\n");
@@ -61,7 +60,7 @@ int main(int argc, char *argv[])
 	}
 
 	printf("당신은 player %s입니다.\n", token_player);
-
+	printf("Game  :  %d\n\n", game_count);
 	recv_len = 0;
 
 	while (1)
@@ -128,7 +127,7 @@ void print_turn(char *player, char *turn)
 {
 
 	if (strcmp(turn, "-1") == 0)
-		printf("게임이 종료되었습니다.\n");
+		printf("게임이 종료되었습니다. 새로운 게임을 시작합니다.\n\n\n\n\n\n\nGame  :  %d\n\n",++game_count);
 	printf("\n-----------------------------------\n");
 	if (strcmp(player, turn) == 0)
 		printf("나의 차례입니다.\n");
