@@ -38,6 +38,8 @@ int main(int argc, char *argv[])
 	memset(&servAddr, 0, sizeof(servAddr));
 	servAddr.sin_family = AF_INET;
 	servAddr.sin_addr.s_addr = inet_addr("155.230.28.129");
+	//servAddr.sin_addr.s_addr = inet_addr("118.45.154.188");
+
 	servAddr.sin_port = htons(atoi("45454"));
 
 	if (connect(hSocket, (struct sockaddr*)&servAddr, sizeof(servAddr)) == -1)
@@ -98,6 +100,7 @@ int main(int argc, char *argv[])
 
 	players[0] = strtok_s(token_player, "/", &players[1]);
 	players[1] = strtok_s(players[1], "/", &players[2]);
+	players[2] = strtok_s(players[2], "/", &players[3]);
 	print_player(players, 3);
 	/*
 	참가 user 출력
@@ -117,22 +120,24 @@ int main(int argc, char *argv[])
 		while (recv_len < str_len)
 		{
 			recv_cnt = recv(hSocket, &user_info[recv_len], BUF_SIZE, 0);
-
 			if (recv_cnt == -1)
 				error_handling("read() error!");
 			recv_len += recv_cnt;
 		}
 		
+		printf("%s", user_info);
 		turn = strtok_s(user_info, "/", &chanceStr);
-
 		chanceStr = strtok_s(chanceStr, "/", &word_now);
-		
-
 		word_now = strtok_s(word_now, "/", &tf);
-		if (strcmp(tf, user_name) == 0)
-			printf("당신의 승리입니다.\n");
-		else if (strcmp(tf, "0") != 0)
-			printf("%s의 승리입니다.", tf);
+		printf("%s\n", drawHangman(atoi(chanceStr)));
+		
+		if (strcmp(tf, players[3]) == 0)
+		{
+			printf("정답 입니다.\n");
+			//chanceStr = "7";
+		}
+		else if (strcmp(tf, "-1") != 0)
+			printf("%s가 정답을 맞추었습니다.", tf);
 	
 
 		printf("남은 기회 : %d \n", atoi(chanceStr));
@@ -141,10 +146,11 @@ int main(int argc, char *argv[])
 		//printf("%s", tf);
 
 
-		printf("%s\n", drawHangman(atoi(chanceStr)));
+
+		
 		print_turn(players, turn, 3);
 
-		if (strcmp(turn, temp) == 0)	//본인이름과 server가 보낸 turn 비교해서 같으면 진행
+		if (strcmp(turn,players[3]) == 0)	//본인이름과 server가 보낸 turn 비교해서 같으면 진행
 		{
 			printf("게임을 시작하겠습니다. 종료하시고 싶으시면 'exit'를 입력해주세요\n");
 			puts("단어 혹은 알파벳을 입력하세요 : ");
@@ -188,13 +194,16 @@ void print_player(char *player[], int i)
 void print_turn(char *player[], char *turn, int i)
 {
 	//int i;
+	int turn_ind = atoi(turn);
+
 	printf("\n------------현재 turn------------\n");
 
 	for (i = 0; i < 3; i++)
 	{
 		//strcat(player[i], "\n");
-		if (strcmp(turn, player[i]) == 0)
-			printf("%s<-\n", player[i]);
+		//if (strcmp(turn, player[i]) == 0)
+		if(turn_ind==i)
+		printf("%s<-\n", player[i]);
 		else
 			printf("%s\n", player[i]);
 	}
