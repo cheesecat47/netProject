@@ -47,8 +47,9 @@ def game_reset():
 
 
 def get_random_word():
-    # 미구현
-    return 'apple'
+    word_list = ["apple", "pineapple", "grape", "melon", "lemon", "pear", "watermelon"]
+    random_index = random.randrange(len(word_list))
+    return word_list[random_index]
 
 
 def game_set_random_turn():
@@ -60,7 +61,7 @@ def game_set_random_turn():
         turn = random.randrange(clients_number)
 
 
-def game_word_check(input):
+def game_word_check(ch):
     global tries_left
     global word
     global goal
@@ -73,20 +74,20 @@ def game_word_check(input):
 
     # 알파벳인지 단어인지 구별
     # 단어일 때
-    if input == word:
+    if ch == word:
         flag_found = True
         goal = 0  # * 한꺼번에 맞췄을경우 전부 제거
         for i in range(len(word)):
             word_temp += word[i] + ' '  # 알파벳 띄어쓰기 포함해서 붙임
 
     # 알파벳일 때
-    elif input != word:
+    elif ch != word:
         for i in range(len(word)):
-            if input == word[i]:  # 알파벳 같은게 있으면
-                if input in word_now:  # * ch가 이미 나왔을경우
+            if ch == word[i]:  # 알파벳 같은게 있으면
+                if ch in word_now:  # * ch가 이미 나왔을경우
                     word_temp += word_now[i * 2] + ' '  # * 알파벳 똑같을때랑 똑같이 처리
                 else:
-                    word_temp += input + ' '  # 알파벳 붙이고
+                    word_temp += ch + ' '  # 알파벳 붙이고
                     flag_found = True  # 새로운게 있다고 알림
                     goal -= 1  # * 그리고 정답 체크
             else:  # 알파벳 다르면
@@ -174,11 +175,6 @@ def clients_take_turn(client_index, connectionSock):
     if len(recvData) > 0:  # null이 아니면
         recvData = recvData.rstrip('\n')  # 개행문자 떼고
 
-        if recvData == 'exit':
-            print('client sent exit message')
-            connectionSock.close()
-            return True
-
         word_now, check_result = game_word_check(recvData)  # 체크
 
         game_updated = True
@@ -196,6 +192,11 @@ def clients_take_turn(client_index, connectionSock):
 
 
 # 메인
+player_number = 0
+while player_number < 1 or player_number > 99:
+    player_number = int(input("게임을 시작할 최소 인원을 입력해주십시오.(1~99) : "))
+CLIENTS_MIN = player_number
+
 t = threading.Thread(target=clients_accept)
 t.start()
 
@@ -211,7 +212,7 @@ while True:
     if clients_number < CLIENTS_MIN:
         print("error : 클라이언트가 부족합니다. clients_number = ", clients_number)
         CLIENTS_LIST_LOCKED = False
-        time.sleep(0.5);
+        time.sleep(0.5)
         new_game = True
         continue
 
@@ -227,7 +228,7 @@ while True:
         print("error : 클라이언트 연결이 끊겼습니다.")
         CLIENTS_LIST_LOCKED = False
         continue
-    if turn >= 0 and turn < clients_number:
+    if 0 <= turn < clients_number:
         client_index, client_socket = clients[turn]
         game_end = clients_take_turn(client_index, client_socket)
         if game_end:
