@@ -38,6 +38,8 @@ def client_manager(connectionSock, addr):
     global word_now
     global clients
 
+    debugtimer = 0
+
     if gamestart:
         return
     localturn = turn
@@ -62,7 +64,8 @@ def client_manager(connectionSock, addr):
     while gamestart:
         if localturn == turn:
             print("localturn ", localturn, " turn ", turn)
-            send_formal_data(turn, connectionSock)
+            for name, sock in clients:
+                send_formal_data(turn, sock)
 
             try:
                 recvData = connectionSock.recv(40).decode('utf-8')  # 문자열로 입력 받음
@@ -85,8 +88,10 @@ def client_manager(connectionSock, addr):
             elif len(recvData) == 0:
                 break
         else:
-            print("player ", clientName, "waiting for turn", localturn, "/", turn)
+            if debugtimer % 3 == 0:
+                print("player ", clientName, "waiting for turn", localturn, "/", turn)
             time.sleep(1)
+            debugtimer += 1
 
 def checkword(ch, cast):
     global chance
@@ -193,6 +198,9 @@ def send_formal_data(n, sock):
     global word_now
     global result
 
+    n = turn
+    if result != -1:
+        n = -1
     sendData = str(n) + '/' + str(chance) + '/' + word_now + '/' + str(result)
     print(sendData)
     sock.send(sendData.encode('utf-8'))
@@ -219,18 +227,23 @@ while True:
         sendData = nameList + '/' + str(i)
         print(sendData)
         sock.send(sendData.encode('utf-8'))
-        if i != turn:
-            send_formal_data(-1, sock)
+        # if i != turn:
+        #     send_formal_data(-1, sock)
         i += 1
 
-    beforeturn = turn
     while gamestart:
-        if turn != beforeturn:
-            print("turn ", turn)
-            beforeturn = turn
-            n, s = clients[beforeturn]
-            for name, sock in clients:
-                if sock != s:
-                    send_formal_data(-1, sock)
+        while result == -1:
+            time.sleep(1)
+        initgame()
+        turn = (turn + 1) % len(clients)
+    # beforeturn = turn
+    # while gamestart:
+    #     if turn != beforeturn:
+    #         print("turn ", turn)
+    #         beforeturn = turn
+    #         n, s = clients[beforeturn]
+    #         for name, sock in clients:
+    #             if sock != s:
+    #                 send_formal_data(-1, sock)
 
     break
